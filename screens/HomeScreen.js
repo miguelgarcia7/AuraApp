@@ -42,14 +42,18 @@ const HomeScreen = ({ navigation }) => {
                 return;
             }
 
-            // Make API call to get sounds
+            // Create FormData object
+            const formData = new FormData();
+            formData.append('profile_id', profileId);
+            formData.append('login_code', loginCode);
+
+            // Make API call to get sounds using form-data
             const response = await fetch('https://dev.3dnaturesounds.com/api/get_profile_sounds/', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'profile-id': profileId,
-                    'login-code': loginCode
-                }
+                    'Accept': 'application/json',
+                },
+                body: formData
             });
 
             const data = await response.json();

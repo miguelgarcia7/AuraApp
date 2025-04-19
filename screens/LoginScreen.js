@@ -37,12 +37,18 @@ const LoginScreen = ({ navigation }) => {
         setError('');
 
         try {
+
+            // Create FormData object
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('password', password);
+
             const response = await fetch('https://dev.3dnaturesounds.com/api/login/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email, password }),
+                body: formData
             });
 
             const data = await response.json();
@@ -60,7 +66,7 @@ const LoginScreen = ({ navigation }) => {
                 // Navigate to main app screen (not implemented yet)
                 // navigation.navigate('Home');
                 navigation.navigate('Home');
-                Alert.alert('Success', 'Login successful!');
+                //Alert.alert('Success', 'Login successful!');
             } else {
                 setError('Login failed. Please check your credentials.');
             }
