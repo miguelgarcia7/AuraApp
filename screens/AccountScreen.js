@@ -59,8 +59,8 @@ const AccountScreen = ({ navigation }) => {
     };
 
     const navigateTo = (screen) => {
-        // This would navigate to other account-related screens in a real app
-        console.log(`Navigate to ${screen}`);
+        // Navigate to the specified screen
+        navigation.navigate(screen);
     };
 
     const renderMenuItem = (icon, title, onPress, color = 'white', isLogout = false) => (
