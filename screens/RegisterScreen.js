@@ -148,10 +148,21 @@ const RegisterScreen = ({ navigation }) => {
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" />
+            {/* Header with Logo */}
+            <View style={styles.logo}>
+                <Ionicons name="moon" size={24} color="#5D5FEF" />
+            </View>
 
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <Ionicons name="arrow-back" size={24} color="white" />
-            </TouchableOpacity>
+            {/* Back button (if needed) */}
+            <View style={styles.header}>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => navigation.goBack()}
+                >
+                    <Ionicons name="arrow-back" size={24} color="white" />
+                    <Text style={styles.backButtonText}>Back</Text>
+                </TouchableOpacity>
+            </View>
 
             <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
@@ -314,11 +325,25 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#121212',
     },
+    logo: {
+        alignItems: 'center',
+        marginTop: 48,
+    },
     scrollView: {
         flex: 1,
     },
-    backButton: {
+    header: {
         padding: 16,
+    },
+    backButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+    },
+    backButtonText: {
+        color: 'white',
+        fontSize: 16,
+        marginLeft: 8,
     },
     content: {
         padding: 24,

@@ -6,6 +6,8 @@ import LoginScreen from './screens/LoginScreen';
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import HomeScreen from './screens/HomeScreen';
+import SoundPlayerScreen from './screens/SoundPlayerScreen'
+import WelcomeScreen from "./screens/WelcomeScreen";
 
 const Stack = createStackNavigator();
 
@@ -13,15 +15,17 @@ export default function App() {
   return (
       <NavigationContainer>
         <Stack.Navigator
-            initialRouteName="Login"
+            initialRouteName="Welcome"
             screenOptions={{
               headerShown: false,
             }}
         >
-          <Stack.Screen name="Login" component={LoginScreen} />
-          <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
-          <Stack.Screen name="Register" component={RegisterScreen} />
-          <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="Welcome" component={WelcomeScreen} />
+            <Stack.Screen name="Login" component={LoginScreen} />
+            <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+            <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="Home" component={HomeScreen} />
+            <Stack.Screen name="SoundPlayer" component={SoundPlayerScreen} />
         </Stack.Navigator>
       </NavigationContainer>
   );

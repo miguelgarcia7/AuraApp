@@ -15,31 +15,44 @@ import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
 
 const HomeScreen = ({ navigation }) => {
-    const [selectedTab, setSelectedTab] = useState('Featured');
-    const [sounds, setSounds] = useState([]);
-    const [samples, setSamples] = useState([]);
+    const [selectedTab, setSelectedTab] = useState('All');
+    const [profileSounds, setProfileSounds] = useState([]);
+    const [sampleSounds, setSampleSounds] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
     // Tabs for filtering sounds
-    const tabs = ['All', 'Featured', 'Recent'];
+    const tabs = ['All', 'My Sounds', 'New Sounds'];
 
     useEffect(() => {
-        fetchSounds();
+        loadAllSounds();
     }, []);
 
-    const fetchSounds = async () => {
-        try {
-            setIsLoading(true);
+    const loadAllSounds = async () => {
+        setIsLoading(true);
+        setError('');
 
+        try {
+            await Promise.all([
+                fetchProfileSounds(),
+                fetchSampleSounds()
+            ]);
+        } catch (err) {
+            console.error('Error loading sounds:', err);
+            setError('Failed to load sounds. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const fetchProfileSounds = async () => {
+        try {
             // Get stored credentials
             const profileId = await SecureStore.getItemAsync('profile_id');
             const loginCode = await SecureStore.getItemAsync('login_code');
 
             if (!profileId || !loginCode) {
-                setError('Please login to view sounds');
-                setIsLoading(false);
-                return;
+                throw new Error('Login credentials not found');
             }
 
             // Create FormData object
@@ -47,8 +60,63 @@ const HomeScreen = ({ navigation }) => {
             formData.append('profile_id', profileId);
             formData.append('login_code', loginCode);
 
-            // Make API call to get sounds using form-data
+            // Make API call using form-data
             const response = await fetch('https://dev.3dnaturesounds.com/api/get_profile_sounds/', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                },
+                body: formData
+            });
+
+            // console.log("profileId: " + profileId);
+            // console.log("loginCode: " + loginCode);
+
+            const data = await response.json();
+
+            if (data.success === 1) {
+
+                // Combine both sounds and samples from profile API
+                const allProfileSounds = [
+                    ...(data.sounds || []).map(sound => ({
+                        ...sound,
+                        id: sound.sound_id,
+                        source: 'profile'
+                    })),
+                    ...(data.samples || []).map(sample => ({
+                        ...sample,
+                        source: 'profile_sample'
+                    }))
+                ];
+
+                setProfileSounds(allProfileSounds);
+
+            } else {
+                console.log('error 1');
+                throw new Error(data.message || 'Failed to load profile sounds');
+            }
+        } catch (err) {
+            console.log('error 2');
+            console.error('Error fetching profile sounds:', err);
+            throw err;
+        }
+    };
+
+    const fetchSampleSounds = async () => {
+        try {
+            // Get stored credentials
+            const profileId = await SecureStore.getItemAsync('profile_id');
+            const loginCode = await SecureStore.getItemAsync('login_code');
+
+            // Create FormData object
+            const formData = new FormData();
+            if (profileId && loginCode) {
+                formData.append('profile_id', profileId);
+                formData.append('login_code', loginCode);
+            }
+
+            // Make API call using form-data
+            const response = await fetch('https://dev.3dnaturesounds.com/api/get_sample_sounds/', {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -59,33 +127,32 @@ const HomeScreen = ({ navigation }) => {
             const data = await response.json();
 
             if (data.success === 1) {
-                setSounds(data.sounds || []);
-                setSamples(data.samples || []);
+                const samples = (data.sounds || []).map(sound => ({
+                    ...sound,
+                    source: 'sample'
+                }));
+
+                setSampleSounds(samples);
             } else {
-                setError('Failed to load sounds');
+                throw new Error(data.message || 'Failed to load sample sounds');
             }
         } catch (err) {
-            console.error('Error fetching sounds:', err);
-            setError('Connection error. Please try again later.');
-        } finally {
-            setIsLoading(false);
+            console.error('Error fetching sample sounds:', err);
+            throw err;
         }
     };
 
-    // Get the data to display based on the selected tab
-    const getDisplayData = () => {
+    // Get the filtered data based on the selected tab
+    const getFilteredSounds = () => {
         switch (selectedTab) {
             case 'All':
-                return [...sounds, ...samples];
-            case 'Featured':
-                // For this example, let's assume Featured items are ones with a premium flag
-                // You might need to adjust this logic based on your actual data structure
-                return [...sounds, ...samples].filter((item, index) => index % 3 === 0); // Just for demo
-            case 'Recent':
-                // For this example, we'll just show sounds (not samples) as "recent"
-                return sounds;
+                return [...profileSounds, ...sampleSounds];
+            case 'My Sounds':
+                return profileSounds.filter(sound => sound.source === 'profile');
+            case 'New Sounds':
+                return sampleSounds;
             default:
-                return [...sounds, ...samples];
+                return [...profileSounds, ...sampleSounds];
         }
     };
 
@@ -94,18 +161,21 @@ const HomeScreen = ({ navigation }) => {
         return `https://dev.3dnaturesounds.com/assets/images/${photo}`;
     };
 
-    // Determine if an item has premium/highlighted status (for the crown icon)
-    const isPremium = (item, index) => {
-        // This is just a placeholder logic - replace with your actual premium determination
-        return index % 3 === 0;
+    const handleSoundPress = (item) => {
+        navigation.navigate('SoundPlayer', {
+            soundId: item.id || item.sound_id,
+            soundTitle: item.title,
+            soundPhoto: item.photo
+        });
     };
 
     const renderSoundItem = ({ item, index }) => (
         <TouchableOpacity
             style={styles.soundCard}
             onPress={() => {
-                // Handle sound selection/playback
-                console.log('Sound selected:', item.title);
+                // Handle sound selection
+                //console.log('Sound selected:', item.title, item);
+                handleSoundPress(item)
             }}
         >
             <Image
@@ -113,11 +183,6 @@ const HomeScreen = ({ navigation }) => {
                 style={styles.soundImage}
                 resizeMode="cover"
             />
-            {isPremium(item, index) && (
-                <View style={styles.crownBadge}>
-                    <Ionicons name="crown" size={16} color="#fff" />
-                </View>
-            )}
             <Text style={styles.soundTitle}>{item.title}</Text>
         </TouchableOpacity>
     );
@@ -131,9 +196,7 @@ const HomeScreen = ({ navigation }) => {
                     <Ionicons name="moon" size={24} color="#5D5FEF" />
                 </View>
                 <Text style={styles.headerTitle}>Home</Text>
-                <TouchableOpacity style={styles.menuButton}>
-                    <Ionicons name="ellipsis-vertical" size={24} color="white" />
-                </TouchableOpacity>
+                <View style={styles.placeholder} />
             </View>
 
             <View style={styles.tabContainer}>
@@ -167,16 +230,16 @@ const HomeScreen = ({ navigation }) => {
                     <Text style={styles.errorText}>{error}</Text>
                     <TouchableOpacity
                         style={styles.retryButton}
-                        onPress={fetchSounds}
+                        onPress={loadAllSounds}
                     >
                         <Text style={styles.retryButtonText}>Retry</Text>
                     </TouchableOpacity>
                 </View>
             ) : (
                 <FlatList
-                    data={getDisplayData()}
+                    data={getFilteredSounds()}
                     renderItem={renderSoundItem}
-                    keyExtractor={(item) => item.sound_id?.toString() || item.id?.toString()}
+                    keyExtractor={(item) => (item.id || item.sound_id || Math.random().toString()).toString()}
                     contentContainerStyle={styles.soundsGrid}
                     numColumns={2}
                     showsVerticalScrollIndicator={false}
@@ -185,13 +248,8 @@ const HomeScreen = ({ navigation }) => {
 
             <View style={styles.bottomTabs}>
                 <TouchableOpacity style={styles.bottomTab} onPress={() => {}}>
-                    <Ionicons name="musical-notes" size={24} color="white" />
-                    <Text style={styles.bottomTabText}>Sounds</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={styles.bottomTab} onPress={() => {}}>
-                    <Ionicons name="grid" size={24} color="gray" />
-                    <Text style={styles.bottomTabText}>Library</Text>
+                    <Ionicons name="grid" size={24} color="white" />
+                    <Text style={styles.bottomTabText}>Home</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.bottomTab} onPress={() => {}}>
@@ -227,8 +285,8 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: 'white',
     },
-    menuButton: {
-        padding: 8,
+    placeholder: {
+        width: 40,
     },
     tabContainer: {
         flexDirection: 'row',
@@ -298,27 +356,16 @@ const styles = StyleSheet.create({
         bottom: 0,
         left: 0,
         right: 0,
-        padding: 8,
+        padding: 12,
         color: 'white',
         fontWeight: '600',
         backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    },
-    crownBadge: {
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        backgroundColor: 'orange',
-        borderRadius: 12,
-        width: 24,
-        height: 24,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     bottomTabs: {
         flexDirection: 'row',
         borderTopWidth: 1,
         borderTopColor: '#2A2A2A',
-        paddingVertical: 8,
+        paddingVertical: 12,
     },
     bottomTab: {
         flex: 1,
@@ -328,7 +375,7 @@ const styles = StyleSheet.create({
     bottomTabText: {
         fontSize: 12,
         marginTop: 4,
-        color: 'gray',
+        color: 'white',
     },
 });
 

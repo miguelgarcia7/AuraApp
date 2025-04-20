@@ -57,9 +57,21 @@ const ForgotPasswordScreen = ({ navigation }) => {
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" />
 
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <Ionicons name="arrow-back" size={24} color="white" />
-            </TouchableOpacity>
+            {/* Header with Logo */}
+            <View style={styles.logo}>
+                <Ionicons name="moon" size={24} color="#5D5FEF" />
+            </View>
+
+            {/* Back button (if needed) */}
+            <View style={styles.header}>
+                <TouchableOpacity
+                    style={styles.backButton}
+                    onPress={() => navigation.goBack()}
+                >
+                    <Ionicons name="arrow-back" size={24} color="white" />
+                    <Text style={styles.backButtonText}>Back</Text>
+                </TouchableOpacity>
+            </View>
 
             <View style={styles.content}>
                 {!isSubmitted ? (
@@ -103,7 +115,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                                 {isLoading ? (
                                     <ActivityIndicator color="white" />
                                 ) : (
-                                    <Text style={styles.buttonText}>Send OTP Code</Text>
+                                    <Text style={styles.buttonText}>Reset Password</Text>
                                 )}
                             </TouchableOpacity>
                         </View>
@@ -139,8 +151,22 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#121212',
     },
-    backButton: {
+    logo: {
+        alignItems: 'center',
+        marginTop: 48,
+    },
+    header: {
         padding: 16,
+    },
+    backButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+    },
+    backButtonText: {
+        color: 'white',
+        fontSize: 16,
+        marginLeft: 8,
     },
     content: {
         flex: 1,
