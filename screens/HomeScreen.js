@@ -247,12 +247,15 @@ const HomeScreen = ({ navigation }) => {
             )}
 
             <View style={styles.bottomTabs}>
-                <TouchableOpacity style={styles.bottomTab} onPress={() => {}}>
+                <TouchableOpacity style={styles.bottomTab}>
                     <Ionicons name="grid" size={24} color="white" />
                     <Text style={styles.bottomTabText}>Home</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.bottomTab} onPress={() => {}}>
+                <TouchableOpacity
+                    style={styles.bottomTab}
+                    onPress={() => navigation.navigate('Account')}
+                >
                     <Ionicons name="person" size={24} color="gray" />
                     <Text style={styles.bottomTabText}>Account</Text>
                 </TouchableOpacity>
