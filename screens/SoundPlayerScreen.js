@@ -1,4 +1,3 @@
-// screens/SoundPlayerScreen.js
 import React, { useState, useEffect, useRef } from 'react';
 import {
     StyleSheet,
@@ -147,9 +146,11 @@ const SoundPlayerScreen = ({ route, navigation }) => {
         if (sound) {
             if (isPlaying) {
                 await sound.pauseAsync();
+                setIsPlaying(false); // Explicitly update state
                 stopTimer();
             } else {
                 await sound.playAsync();
+                setIsPlaying(true); // Explicitly update state
                 startTimer();
             }
         } else if (soundData) {
