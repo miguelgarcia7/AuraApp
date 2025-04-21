@@ -13,7 +13,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 const ForgotPasswordScreen = ({ navigation }) => {
-    const [email, setEmail] = useState('andrew.ainsley@yourdomain.com');
+    const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [successMessage, setSuccessMessage] = useState('');
@@ -79,7 +79,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
                         <View style={styles.titleContainer}>
                             <Text style={styles.title}>Forgot Your Password? 🔑</Text>
                             <Text style={styles.subtitle}>
-                                No worries! Enter the email associated with your Dreamify account below.
+                                No worries! Enter the email associated with your AuraApp account below.
                                 We'll send you a one-time verification code to reset your password.
                             </Text>
                         </View>
