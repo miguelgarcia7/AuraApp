@@ -9,6 +9,10 @@ import {
     SafeAreaView,
     StatusBar,
     ScrollView,
+    Modal,
+    Animated,
+    Dimensions,
+    BlurView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
@@ -18,11 +22,29 @@ const AccountScreen = ({ navigation }) => {
         name: 'Andrew Ainsley',
         email: 'miguel@miguelangelgarcia.com'
     });
+    const [showLogoutModal, setShowLogoutModal] = useState(false);
+    const [modalAnimation] = useState(new Animated.Value(0));
 
     useEffect(() => {
         // Load profile data from server or secure storage
         loadProfileData();
     }, []);
+
+    useEffect(() => {
+        if (showLogoutModal) {
+            Animated.timing(modalAnimation, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true
+            }).start();
+        } else {
+            Animated.timing(modalAnimation, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true
+            }).start();
+        }
+    }, [showLogoutModal]);
 
     const loadProfileData = async () => {
         try {
@@ -44,17 +66,59 @@ const AccountScreen = ({ navigation }) => {
 
     const handleLogout = async () => {
         try {
-            // Clear secure storage
+            // Get stored credentials
+            const profileId = await SecureStore.getItemAsync('profile_id');
+            const loginCode = await SecureStore.getItemAsync('login_code');
+
+            if (!profileId || !loginCode) {
+                throw new Error('Login credentials not found');
+            }
+
+            // Create FormData object
+            const formData = new FormData();
+            formData.append('profile_id', profileId);
+            formData.append('login_code', loginCode);
+
+            // Make API call to logout
+            const response = await fetch('https://dev.3dnaturesounds.com/api/logout/', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            // Clear secure storage regardless of API response success
             await SecureStore.deleteItemAsync('profile_id');
             await SecureStore.deleteItemAsync('login_code');
 
-            // Navigate to Welcome screen
-            navigation.reset({
-                index: 0,
-                routes: [{ name: 'Welcome' }],
-            });
+            // Hide modal
+            setShowLogoutModal(false);
+
+            // Short delay to allow modal animation to complete
+            setTimeout(() => {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Welcome' }], // Navigate to Login screen instead of Welcome
+                });
+            }, 300);
+
         } catch (err) {
             console.error('Error during logout:', err);
+
+            // Even if there's an error, clear local credentials and redirect to login
+            await SecureStore.deleteItemAsync('profile_id');
+            await SecureStore.deleteItemAsync('login_code');
+
+            setShowLogoutModal(false);
+            setTimeout(() => {
+                navigation.reset({
+                    index: 0,
+                    routes: [{ name: 'Welcome' }],
+                });
+            }, 300);
         }
     };
 
@@ -75,6 +139,50 @@ const AccountScreen = ({ navigation }) => {
             {!isLogout && <Ionicons name="chevron-forward" size={20} color="gray" />}
         </TouchableOpacity>
     );
+
+    const renderLogoutModal = () => {
+        const translateY = modalAnimation.interpolate({
+            inputRange: [0, 1],
+            outputRange: [300, 0]
+        });
+
+        return (
+            <Modal
+                visible={showLogoutModal}
+                transparent={true}
+                animationType="none"
+                onRequestClose={() => setShowLogoutModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <Animated.View
+                        style={[
+                            styles.logoutModalContainer,
+                            { transform: [{ translateY }] }
+                        ]}
+                    >
+                        <Text style={styles.logoutModalTitle}>Logout</Text>
+                        <Text style={styles.logoutModalSubtitle}>Sure you want to log out?</Text>
+
+                        <View style={styles.logoutButtonsContainer}>
+                            <TouchableOpacity
+                                style={styles.cancelButton}
+                                onPress={() => setShowLogoutModal(false)}
+                            >
+                                <Text style={styles.cancelButtonText}>Cancel</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.confirmLogoutButton}
+                                onPress={handleLogout}
+                            >
+                                <Text style={styles.confirmLogoutText}>Yes, Logout</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </Animated.View>
+                </View>
+            </Modal>
+        );
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -125,7 +233,7 @@ const AccountScreen = ({ navigation }) => {
 
                 {/* Logout Button */}
                 <View style={styles.logoutSection}>
-                    {renderMenuItem('log-out', 'Logout', handleLogout, '#FF3B30', true)}
+                    {renderMenuItem('log-out', 'Logout', () => setShowLogoutModal(true), '#FF3B30', true)}
                 </View>
             </ScrollView>
 
@@ -144,6 +252,9 @@ const AccountScreen = ({ navigation }) => {
                     <Text style={styles.bottomTabText}>Account</Text>
                 </TouchableOpacity>
             </View>
+
+            {/* Logout Modal */}
+            {renderLogoutModal()}
         </SafeAreaView>
     );
 };
@@ -289,6 +400,60 @@ const styles = StyleSheet.create({
         fontSize: 12,
         marginTop: 4,
         color: 'white',
+    },
+    // Logout Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        justifyContent: 'flex-end',
+    },
+    logoutModalContainer: {
+        backgroundColor: '#1E1E1E',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 24,
+        paddingBottom: 40,
+    },
+    logoutModalTitle: {
+        color: '#FF3B30',
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    logoutModalSubtitle: {
+        color: 'white',
+        fontSize: 16,
+        textAlign: 'center',
+        marginBottom: 24,
+    },
+    logoutButtonsContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    cancelButton: {
+        flex: 1,
+        backgroundColor: '#2A2A2A',
+        borderRadius: 25,
+        paddingVertical: 15,
+        marginRight: 8,
+        alignItems: 'center',
+    },
+    cancelButtonText: {
+        color: 'white',
+        fontWeight: '600',
+    },
+    confirmLogoutButton: {
+        flex: 1,
+        backgroundColor: '#4A4AF4',
+        borderRadius: 25,
+        paddingVertical: 15,
+        marginLeft: 8,
+        alignItems: 'center',
+    },
+    confirmLogoutText: {
+        color: 'white',
+        fontWeight: '600',
     },
 });
 
