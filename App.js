@@ -10,6 +10,7 @@ import SoundPlayerScreen from './screens/SoundPlayerScreen'
 import WelcomeScreen from "./screens/WelcomeScreen";
 import AccountScreen from "./screens/AccountScreen";
 import PersonalInfoScreen from "./screens/PersonalInfoScreen";
+import HelpSupportScreen from "./screens/HelpSupportScreen";
 
 const Stack = createStackNavigator();
 
@@ -30,6 +31,7 @@ export default function App() {
             <Stack.Screen name="SoundPlayer" component={SoundPlayerScreen} />
             <Stack.Screen name="Account" component={AccountScreen} />
             <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
+            <Stack.Screen name="Support" component={HelpSupportScreen} />
         </Stack.Navigator>
       </NavigationContainer>
   );
