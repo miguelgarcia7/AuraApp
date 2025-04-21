@@ -15,6 +15,7 @@ import FAQScreen from "./screens/FAQScreen";
 import PrivacyPolicyScreen from "./screens/PrivacyPolicyScreen";
 import TermsOfServiceScreen from "./screens/TermsOfServiceScreen";
 import AboutUsScreen from "./screens/AboutUsScreen";
+import ContactSupportScreen from "./screens/ContactSupportScreen";
 
 const Stack = createStackNavigator();
 
@@ -40,6 +41,7 @@ export default function App() {
             <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
             <Stack.Screen name="TermsOfService" component={TermsOfServiceScreen} />
             <Stack.Screen name="AboutUs" component={AboutUsScreen} />
+            <Stack.Screen name="ContactSupport" component={ContactSupportScreen} />
         </Stack.Navigator>
       </NavigationContainer>
   );

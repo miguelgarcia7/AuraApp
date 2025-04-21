@@ -63,7 +63,7 @@ const supportOptions = [
         title: 'Visit Our Website',
         icon: 'globe',
         action: () => {
-            Linking.openURL('https://3dnaturesounds.com');
+            Linking.openURL('https://dev.3dnaturesounds.com');
         }
     },
     {
