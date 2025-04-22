@@ -22,19 +22,19 @@ const IntroScreen = ({ navigation }) => {
             id: '1',
             title: 'Meet Aura - Your Portal to Serene Sleep',
             description: 'Embark on a journey to a peaceful night\'s rest with Aura. Explore a curated collection of soothing sleep sounds.',
-            image: require('../assets/moon-logo.svg'), // Replace with your actual logo path
+            image: require('../assets/moon-logo.png'), // Replace with your actual logo path
         },
         {
             id: '2',
             title: 'Personalize Your Perfect Sleep Soundtrack',
             description: 'Aura empowers you to create a sleep experience that\'s uniquely yours. Mix and match a variety of soothing sounds.',
-            image: require('../assets/moon-logo.svg'), // Replace with your actual logo path
+            image: require('../assets/moon-logo.png'), // Replace with your actual logo path
         },
         {
             id: '3',
             title: 'Unlock Premium & Access Exclusive Benefits',
             description: 'Upgrade to Aura Premium for access to an expanded library of premium sleep sounds. Dive into an amazing sleep experience.',
-            image: require('../assets/moon-logo.svg'), // Replace with your actual logo path
+            image: require('../assets/moon-logo.png'), // Replace with your actual logo path
         },
     ];
 
