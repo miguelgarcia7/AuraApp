@@ -16,6 +16,7 @@ import PrivacyPolicyScreen from "./screens/PrivacyPolicyScreen";
 import TermsOfServiceScreen from "./screens/TermsOfServiceScreen";
 import AboutUsScreen from "./screens/AboutUsScreen";
 import ContactSupportScreen from "./screens/ContactSupportScreen";
+import IntroScreen from "./screens/IntroScreen";
 
 const Stack = createStackNavigator();
 
@@ -23,7 +24,7 @@ export default function App() {
   return (
       <NavigationContainer>
         <Stack.Navigator
-            initialRouteName="Welcome"
+            initialRouteName="Intro"
             screenOptions={{
               headerShown: false,
             }}
@@ -32,6 +33,7 @@ export default function App() {
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
+            <Stack.Screen name="Intro" component={IntroScreen} />
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="SoundPlayer" component={SoundPlayerScreen} />
             <Stack.Screen name="Account" component={AccountScreen} />

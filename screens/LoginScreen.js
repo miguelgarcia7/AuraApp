@@ -57,7 +57,14 @@ const LoginScreen = ({ navigation }) => {
                     await SecureStore.deleteItemAsync('remember_email');
                 }
 
-                navigation.navigate('Home');
+                // Check if this is the first login
+                if (data.first_login === 1) {
+                    // Navigate to the intro screen for first-time users
+                    navigation.navigate('Intro');
+                } else {
+                    // Navigate directly to home for returning users
+                    navigation.navigate('Home');
+                }
             } else {
                 setError('Login failed. Please check your credentials.');
             }
