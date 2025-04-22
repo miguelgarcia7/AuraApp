@@ -28,7 +28,6 @@ const RegisterScreen = ({ navigation }) => {
     const [agreeToTerms, setAgreeToTerms] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
-    const [isRegistered, setIsRegistered] = useState(false);
 
     const updateFormData = (field, value) => {
         setFormData(prev => ({
@@ -78,35 +77,36 @@ const RegisterScreen = ({ navigation }) => {
         setError('');
 
         try {
-            // Prepare data for API call
-            const apiData = {
-                email: formData.email,
-                password: formData.password,
-                first_name: formData.firstName,
-                last_name: formData.lastName
-            };
+            // Create FormData for API call
+            const formDataObj = new FormData();
+            formDataObj.append('email', formData.email);
+            formDataObj.append('password', formData.password);
+            formDataObj.append('first_name', formData.firstName);
+            formDataObj.append('last_name', formData.lastName);
 
             // Make API call to register endpoint
             const response = await fetch('https://dev.3dnaturesounds.com/api/register/', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                 },
-                body: JSON.stringify(apiData),
+                body: formDataObj
             });
 
             const data = await response.json();
 
             if (data.success === 1) {
-                // Store profile_id and login_code in secure storage
-                if (data.profile_id) {
-                    await SecureStore.setItemAsync('profile_id', data.profile_id.toString());
-                }
-                if (data.login_code) {
-                    await SecureStore.setItemAsync('login_code', data.login_code);
-                }
-
-                setIsRegistered(true);
+                // Show success message
+                Alert.alert(
+                    "Account Created",
+                    "Your account has been created successfully! Please log in with your credentials.",
+                    [
+                        {
+                            text: "OK",
+                            onPress: () => navigation.navigate('Login')
+                        }
+                    ]
+                );
             } else {
                 setError(data.message || 'Registration failed. Please try again.');
             }
@@ -118,32 +118,9 @@ const RegisterScreen = ({ navigation }) => {
         }
     };
 
-    if (isRegistered) {
-        return (
-            <SafeAreaView style={styles.container}>
-                <StatusBar barStyle="light-content" />
-                <View style={styles.successContainer}>
-                    <View style={styles.successIconContainer}>
-                        <Ionicons name="checkmark-circle" size={60} color="#5D5FEF" />
-                    </View>
-                    <Text style={styles.successTitle}>Account Created!</Text>
-                    <Text style={styles.successMessage}>
-                        Welcome to Aura. You're all set to explore a world of tranquility.
-                    </Text>
-                    <TouchableOpacity
-                        style={[styles.button, { marginTop: 40 }]}
-                        onPress={() => {
-                            // Navigate to main app screen
-                            Alert.alert('Success', 'Registration complete!');
-                            // navigation.navigate('Home');
-                        }}
-                    >
-                        <Text style={styles.buttonText}>Continue to App</Text>
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
-        );
-    }
+    const handleTermsPress = () => {
+        navigation.navigate('TermsOfService');
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -153,7 +130,7 @@ const RegisterScreen = ({ navigation }) => {
                 <Ionicons name="moon" size={24} color="#5D5FEF" />
             </View>
 
-            {/* Back button (if needed) */}
+            {/* Back button */}
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.backButton}
@@ -292,14 +269,23 @@ const RegisterScreen = ({ navigation }) => {
                                 )}
                             </TouchableOpacity>
                             <Text style={styles.checkboxLabel}>
-                                I agree to Aura <Text style={styles.textLink}>Terms & Conditions</Text>.
+                                I agree to Aura{' '}
+                                <Text style={styles.textLink} onPress={handleTermsPress}>
+                                    Terms & Conditions
+                                </Text>.
                             </Text>
                         </View>
                     </View>
 
                     <View style={styles.footer}>
                         <Text style={styles.footerText}>
-                            Already have an account? <Text style={styles.textLink} onPress={() => navigation.navigate('Login')}>Sign in</Text>
+                            Already have an account?{' '}
+                            <Text
+                                style={styles.textLink}
+                                onPress={() => navigation.navigate('Login')}
+                            >
+                                Sign in
+                            </Text>
                         </Text>
 
                         <TouchableOpacity
@@ -440,31 +426,6 @@ const styles = StyleSheet.create({
         color: 'white',
         fontSize: 16,
         fontWeight: '600',
-    },
-    // Success state styles
-    successContainer: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 24,
-    },
-    successIconContainer: {
-        backgroundColor: 'rgba(93, 95, 239, 0.1)',
-        borderRadius: 50,
-        padding: 20,
-        marginBottom: 20,
-    },
-    successTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: 'white',
-        marginBottom: 12,
-    },
-    successMessage: {
-        fontSize: 16,
-        color: '#A0A0A0',
-        textAlign: 'center',
-        marginBottom: 12,
     }
 });
 
