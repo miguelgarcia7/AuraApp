@@ -111,19 +111,26 @@ const HomeScreen = ({ navigation }) => {
     };
 
     const handleSoundPress = (item) => {
-        navigation.navigate('SoundPlayer', {
-            soundId: item.id || item.sound_id,
-            soundTitle: item.title,
-            soundPhoto: item.photo
-        });
+        // Check if it's a sample sound or regular sound
+        if (item.source === 'sample') {
+            navigation.navigate('SoundPlayerSample', {
+                soundId: item.id || item.sound_id,
+                soundTitle: item.title,
+                soundPhoto: item.photo
+            });
+        } else {
+            navigation.navigate('SoundPlayer', {
+                soundId: item.id || item.sound_id,
+                soundTitle: item.title,
+                soundPhoto: item.photo
+            });
+        }
     };
 
     const renderSoundItem = ({ item, index }) => (
         <TouchableOpacity
             style={styles.soundCard}
             onPress={() => {
-                // Handle sound selection
-                //console.log('Sound selected:', item.title, item);
                 handleSoundPress(item)
             }}
         >

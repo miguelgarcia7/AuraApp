@@ -7,6 +7,7 @@ import ForgotPasswordScreen from './screens/ForgotPasswordScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import HomeScreen from './screens/HomeScreen';
 import SoundPlayerScreen from './screens/SoundPlayerScreen'
+import SoundPlayerSampleScreen from './screens/SoundPlayerSampleScreen';
 import WelcomeScreen from "./screens/WelcomeScreen";
 import AccountScreen from "./screens/AccountScreen";
 import PersonalInfoScreen from "./screens/PersonalInfoScreen";
@@ -36,6 +37,7 @@ export default function App() {
             <Stack.Screen name="Intro" component={IntroScreen} />
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="SoundPlayer" component={SoundPlayerScreen} />
+            <Stack.Screen name="SoundPlayerSample" component={SoundPlayerSampleScreen} />
             <Stack.Screen name="Account" component={AccountScreen} />
             <Stack.Screen name="PersonalInfo" component={PersonalInfoScreen} />
             <Stack.Screen name="Support" component={HelpSupportScreen} />
