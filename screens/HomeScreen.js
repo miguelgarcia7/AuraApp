@@ -16,8 +16,7 @@ import * as SecureStore from 'expo-secure-store';
 
 const HomeScreen = ({ navigation }) => {
     const [selectedTab, setSelectedTab] = useState('All');
-    const [profileSounds, setProfileSounds] = useState([]);
-    const [sampleSounds, setSampleSounds] = useState([]);
+    const [allSounds, setAllSounds] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -25,18 +24,15 @@ const HomeScreen = ({ navigation }) => {
     const tabs = ['All', 'My Sounds', 'New Sounds'];
 
     useEffect(() => {
-        loadAllSounds();
+        loadSounds();
     }, []);
 
-    const loadAllSounds = async () => {
+    const loadSounds = async () => {
         setIsLoading(true);
         setError('');
 
         try {
-            await Promise.all([
-                fetchProfileSounds(),
-                fetchSampleSounds()
-            ]);
+            await fetchAllSounds();
         } catch (err) {
             console.error('Error loading sounds:', err);
             setError('Failed to load sounds. Please try again.');
@@ -45,7 +41,7 @@ const HomeScreen = ({ navigation }) => {
         }
     };
 
-    const fetchProfileSounds = async () => {
+    const fetchAllSounds = async () => {
         try {
             // Get stored credentials
             const profileId = await SecureStore.getItemAsync('profile_id');
@@ -69,15 +65,11 @@ const HomeScreen = ({ navigation }) => {
                 body: formData
             });
 
-            // console.log("profileId: " + profileId);
-            // console.log("loginCode: " + loginCode);
-
             const data = await response.json();
 
             if (data.success === 1) {
-
-                // Combine both sounds and samples from profile API
-                const allProfileSounds = [
+                // Combine sounds and samples, with sounds first and samples last
+                const combinedSounds = [
                     ...(data.sounds || []).map(sound => ({
                         ...sound,
                         id: sound.sound_id,
@@ -85,59 +77,16 @@ const HomeScreen = ({ navigation }) => {
                     })),
                     ...(data.samples || []).map(sample => ({
                         ...sample,
-                        source: 'profile_sample'
+                        source: 'sample'
                     }))
                 ];
 
-                setProfileSounds(allProfileSounds);
-
+                setAllSounds(combinedSounds);
             } else {
-                console.log('error 1');
-                throw new Error(data.message || 'Failed to load profile sounds');
+                throw new Error(data.message || 'Failed to load sounds');
             }
         } catch (err) {
-            console.log('error 2');
-            console.error('Error fetching profile sounds:', err);
-            throw err;
-        }
-    };
-
-    const fetchSampleSounds = async () => {
-        try {
-            // Get stored credentials
-            const profileId = await SecureStore.getItemAsync('profile_id');
-            const loginCode = await SecureStore.getItemAsync('login_code');
-
-            // Create FormData object
-            const formData = new FormData();
-            if (profileId && loginCode) {
-                formData.append('profile_id', profileId);
-                formData.append('login_code', loginCode);
-            }
-
-            // Make API call using form-data
-            const response = await fetch('https://app.3dnaturesounds.com/api/get_sample_sounds/', {
-                method: 'POST',
-                headers: {
-                    'Accept': 'application/json',
-                },
-                body: formData
-            });
-
-            const data = await response.json();
-
-            if (data.success === 1) {
-                const samples = (data.sounds || []).map(sound => ({
-                    ...sound,
-                    source: 'sample'
-                }));
-
-                setSampleSounds(samples);
-            } else {
-                throw new Error(data.message || 'Failed to load sample sounds');
-            }
-        } catch (err) {
-            console.error('Error fetching sample sounds:', err);
+            console.error('Error fetching sounds:', err);
             throw err;
         }
     };
@@ -146,13 +95,13 @@ const HomeScreen = ({ navigation }) => {
     const getFilteredSounds = () => {
         switch (selectedTab) {
             case 'All':
-                return [...profileSounds, ...sampleSounds];
+                return allSounds;
             case 'My Sounds':
-                return profileSounds.filter(sound => sound.source === 'profile');
+                return allSounds.filter(sound => sound.source === 'profile');
             case 'New Sounds':
-                return sampleSounds;
+                return allSounds.filter(sound => sound.source === 'sample');
             default:
-                return [...profileSounds, ...sampleSounds];
+                return allSounds;
         }
     };
 
@@ -230,7 +179,7 @@ const HomeScreen = ({ navigation }) => {
                     <Text style={styles.errorText}>{error}</Text>
                     <TouchableOpacity
                         style={styles.retryButton}
-                        onPress={loadAllSounds}
+                        onPress={loadSounds}
                     >
                         <Text style={styles.retryButtonText}>Retry</Text>
                     </TouchableOpacity>
