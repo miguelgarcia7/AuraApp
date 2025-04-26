@@ -61,7 +61,7 @@ const HomeScreen = ({ navigation }) => {
             formData.append('login_code', loginCode);
 
             // Make API call using form-data
-            const response = await fetch('https://dev.3dnaturesounds.com/api/get_profile_sounds/', {
+            const response = await fetch('https://app.3dnaturesounds.com/api/get_profile_sounds/', {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -116,7 +116,7 @@ const HomeScreen = ({ navigation }) => {
             }
 
             // Make API call using form-data
-            const response = await fetch('https://dev.3dnaturesounds.com/api/get_sample_sounds/', {
+            const response = await fetch('https://app.3dnaturesounds.com/api/get_sample_sounds/', {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -158,7 +158,7 @@ const HomeScreen = ({ navigation }) => {
 
     // Get image URL for a sound
     const getSoundImageUrl = (photo) => {
-        return `https://dev.3dnaturesounds.com/assets/images/${photo}`;
+        return `https://app.3dnaturesounds.com/assets/images/${photo}`;
     };
 
     const handleSoundPress = (item) => {

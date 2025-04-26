@@ -85,7 +85,7 @@ const RegisterScreen = ({ navigation }) => {
             formDataObj.append('last_name', formData.lastName);
 
             // Make API call to register endpoint
-            const response = await fetch('https://dev.3dnaturesounds.com/api/register/', {
+            const response = await fetch('https://app.3dnaturesounds.com/api/register/', {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',

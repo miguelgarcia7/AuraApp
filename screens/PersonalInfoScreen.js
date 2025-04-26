@@ -59,7 +59,7 @@ const PersonalInfoScreen = ({ navigation }) => {
             formData.append('login_code', loginCode);
 
             // Make API call using form-data
-            const response = await fetch('https://dev.3dnaturesounds.com/api/get_profile_for_edit/', {
+            const response = await fetch('https://app.3dnaturesounds.com/api/get_profile_for_edit/', {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -114,7 +114,7 @@ const PersonalInfoScreen = ({ navigation }) => {
             formData.append('default_language_id', selectedLanguage);
 
             // Make API call using form-data
-            const response = await fetch('https://dev.3dnaturesounds.com/api/update_profile/', {
+            const response = await fetch('https://app.3dnaturesounds.com/api/update_profile/', {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -143,7 +143,7 @@ const PersonalInfoScreen = ({ navigation }) => {
 
     const getProfileImageUrl = () => {
         if (profileData.photo && profileData.photo !== '') {
-            return `https://dev.3dnaturesounds.com/assets/images/${profileData.photo}`;
+            return `https://app.3dnaturesounds.com/assets/images/${profileData.photo}`;
         }
         return require('../assets/profile-placeholder.jpg');
     };

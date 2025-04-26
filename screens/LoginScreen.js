@@ -35,7 +35,7 @@ const LoginScreen = ({ navigation }) => {
             formData.append('email', email);
             formData.append('password', password);
 
-            const response = await fetch('https://dev.3dnaturesounds.com/api/login/', {
+            const response = await fetch('https://app.3dnaturesounds.com/api/login/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'multipart/form-data',

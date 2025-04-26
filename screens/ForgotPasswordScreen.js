@@ -29,7 +29,7 @@ const ForgotPasswordScreen = ({ navigation }) => {
         setError('');
 
         try {
-            const response = await fetch('https://dev.3dnaturesounds.com/api/send_reset_code/', {
+            const response = await fetch('https://app.3dnaturesounds.com/api/send_reset_code/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -18,13 +18,13 @@ const supportOptions = [
         id: 'customer_support',
         title: 'Customer Support',
         icon: 'headset',
-        url: 'https://dev.3dnaturesounds.com/support'
+        url: 'https://app.3dnaturesounds.com/support'
     },
     {
         id: 'website',
         title: 'Website',
         icon: 'globe',
-        url: 'https://dev.3dnaturesounds.com/'
+        url: 'https://app.3dnaturesounds.com/'
     },
     {
         id: 'whatsapp',

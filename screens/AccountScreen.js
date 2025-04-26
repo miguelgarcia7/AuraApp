@@ -80,7 +80,7 @@ const AccountScreen = ({ navigation }) => {
             formData.append('login_code', loginCode);
 
             // Make API call to logout
-            const response = await fetch('https://dev.3dnaturesounds.com/api/logout/', {
+            const response = await fetch('https://app.3dnaturesounds.com/api/logout/', {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',

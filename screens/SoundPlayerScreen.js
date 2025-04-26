@@ -61,7 +61,7 @@ const SoundPlayerScreen = ({ route, navigation }) => {
             formData.append('sound_id', soundId);
 
             // Make API call using form-data
-            const response = await fetch('https://dev.3dnaturesounds.com/api/get_sound/', {
+            const response = await fetch('https://app.3dnaturesounds.com/api/get_sound/', {
                 method: 'POST',
                 headers: {
                     'Accept': 'application/json',
@@ -171,7 +171,7 @@ const SoundPlayerScreen = ({ route, navigation }) => {
     };
 
     const getImageUrl = (photo) => {
-        return `https://dev.3dnaturesounds.com/assets/images/${photo}`;
+        return `https://app.3dnaturesounds.com/assets/images/${photo}`;
     };
 
     return (
