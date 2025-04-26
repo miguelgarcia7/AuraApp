@@ -50,7 +50,7 @@ const IntroScreen = ({ navigation }) => {
         }
     };
 
-    const handleSkip = () => {s
+    const handleSkip = () => {
         navigation.navigate('Login');
     };
 
