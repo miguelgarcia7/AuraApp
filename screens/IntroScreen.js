@@ -50,8 +50,8 @@ const IntroScreen = ({ navigation }) => {
         }
     };
 
-    const handleSkip = () => {
-        navigation.navigate('Home');
+    const handleSkip = () => {s
+        navigation.navigate('Login');
     };
 
     const renderItem = ({ item, index }) => {
