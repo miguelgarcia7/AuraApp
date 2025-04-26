@@ -24,7 +24,7 @@ export default function App() {
   return (
       <NavigationContainer>
         <Stack.Navigator
-            initialRouteName="Intro"
+            initialRouteName="Welcome"
             screenOptions={{
               headerShown: false,
             }}

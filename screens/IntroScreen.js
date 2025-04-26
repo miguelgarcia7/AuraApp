@@ -51,7 +51,7 @@ const IntroScreen = ({ navigation }) => {
     };
 
     const handleSkip = () => {
-        navigation.navigate('Login');
+        navigation.navigate('Home');
     };
 
     const renderItem = ({ item, index }) => {

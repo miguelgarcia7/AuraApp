@@ -126,6 +126,7 @@ const LoginScreen = ({ navigation }) => {
                             onChangeText={setEmail}
                             keyboardType="email-address"
                             autoCapitalize="none"
+                            autoCorrect={false}
                         />
                     </View>
                 </View>
@@ -141,6 +142,8 @@ const LoginScreen = ({ navigation }) => {
                             value={password}
                             onChangeText={setPassword}
                             secureTextEntry={!showPassword}
+                            autoCapitalize="none"
+                            autoCorrect={false}
                         />
                         <TouchableOpacity
                             style={styles.eyeIcon}
