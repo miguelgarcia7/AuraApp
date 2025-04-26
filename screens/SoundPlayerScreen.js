@@ -91,6 +91,13 @@ const SoundPlayerScreen = ({ route, navigation }) => {
                 await sound.unloadAsync();
             }
 
+            // Get stored credentials for stream URL
+            const profileId = await SecureStore.getItemAsync('profile_id');
+            const loginCode = await SecureStore.getItemAsync('login_code');
+
+            // Construct stream URL with credentials
+            const streamUrl = `${soundData.stream_url}?profile_id=${profileId}&login_code=${loginCode}&sound_id=${soundId}`;
+
             // Set up audio session for playback in background
             await Audio.setAudioModeAsync({
                 playsInSilentModeIOS: true,
@@ -100,7 +107,7 @@ const SoundPlayerScreen = ({ route, navigation }) => {
 
             // Load the sound from the streaming URL
             const { sound: newSound } = await Audio.Sound.createAsync(
-                { uri: soundData.stream_url },
+                { uri: streamUrl },
                 { shouldPlay: true, isLooping: true },
                 onPlaybackStatusUpdate
             );
@@ -146,16 +153,26 @@ const SoundPlayerScreen = ({ route, navigation }) => {
         if (sound) {
             if (isPlaying) {
                 await sound.pauseAsync();
-                setIsPlaying(false); // Explicitly update state
+                setIsPlaying(false);
                 stopTimer();
             } else {
                 await sound.playAsync();
-                setIsPlaying(true); // Explicitly update state
+                setIsPlaying(true);
                 startTimer();
             }
         } else if (soundData) {
             loadAndPlaySound();
         }
+    };
+
+    const handleBackPress = async () => {
+        // Stop the sound if it's playing
+        if (sound && isPlaying) {
+            await sound.pauseAsync();
+            setIsPlaying(false);
+            stopTimer();
+        }
+        navigation.goBack();
     };
 
     const formatTime = (seconds) => {
@@ -189,7 +206,7 @@ const SoundPlayerScreen = ({ route, navigation }) => {
                     <View style={styles.header}>
                         <TouchableOpacity
                             style={styles.backButton}
-                            onPress={() => navigation.goBack()}
+                            onPress={handleBackPress}
                         >
                             <Ionicons name="arrow-back" size={24} color="white" />
                         </TouchableOpacity>
