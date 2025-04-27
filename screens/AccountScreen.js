@@ -11,22 +11,28 @@ import {
     ScrollView,
     Modal,
     Animated,
-    Dimensions,
-    BlurView
+    ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
+import { getProfilePhotoPath } from '../utils/profileUtils';
+import { IMG_BASE_URL } from '../utils/constants';
 
 const AccountScreen = ({ navigation }) => {
+    const [loading, setLoading] = useState(true);
     const [profileData, setProfileData] = useState({
-        name: 'Andrew Ainsley',
-        email: 'miguel@miguelangelgarcia.com'
+        first_name: '',
+        last_name: '',
+        email: '',
+        photo: '',
+        plan: 'Free'
     });
+    const [profileImage, setProfileImage] = useState({ uri: `${IMG_BASE_URL}/default-avatar.png` });
     const [showLogoutModal, setShowLogoutModal] = useState(false);
     const [modalAnimation] = useState(new Animated.Value(0));
 
     useEffect(() => {
-        // Load profile data from server or secure storage
+        // Load profile data from server
         loadProfileData();
     }, []);
 
@@ -48,6 +54,7 @@ const AccountScreen = ({ navigation }) => {
 
     const loadProfileData = async () => {
         try {
+            setLoading(true);
             // Get stored credentials
             const profileId = await SecureStore.getItemAsync('profile_id');
             const loginCode = await SecureStore.getItemAsync('login_code');
@@ -57,10 +64,31 @@ const AccountScreen = ({ navigation }) => {
                 return;
             }
 
-            // In a real app, you would fetch profile data from your API here
-            // For now, we'll use the static data in state
+            // Fetch profile data from API
+            const response = await fetch('https://app.3dnaturesounds.com/api/get_profile_for_edit/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `profile_id=${profileId}&login_code=${loginCode}`,
+            });
+
+            const data = await response.json();
+
+            if (data.success === 1) {
+                setProfileData(data.profile);
+
+                // Set profile image
+                if (data.profile.photo) {
+                    setProfileImage({ uri: getProfilePhotoPath(profileId, data.profile.photo) });
+                } else {
+                    setProfileImage({ uri: `${IMG_BASE_URL}/default-avatar.png` });
+                }
+            }
         } catch (err) {
             console.error('Error loading profile data:', err);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -123,7 +151,6 @@ const AccountScreen = ({ navigation }) => {
     };
 
     const navigateTo = (screen) => {
-        // Navigate to the specified screen
         navigation.navigate(screen);
     };
 
@@ -184,6 +211,17 @@ const AccountScreen = ({ navigation }) => {
         );
     };
 
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <StatusBar barStyle="light-content" />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#4A4AF4" />
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="light-content" />
@@ -211,16 +249,21 @@ const AccountScreen = ({ navigation }) => {
                 {/* Profile Section */}
                 <View style={styles.profileSection}>
                     <Image
-                        source={require('../assets/profile-placeholder.jpg')}
+                        source={profileImage}
                         style={styles.profileImage}
                     />
                     <View style={styles.profileInfo}>
-                        <Text style={styles.profileName}>{profileData.name}</Text>
-                        <Text style={styles.profileEmail}>{profileData.email}</Text>
+                        <Text style={styles.profileName}>
+                            {`${profileData.first_name} ${profileData.last_name}`.trim() || 'User'}
+                        </Text>
+                        <Text style={styles.profileEmail}>{profileData.email || ''}</Text>
                     </View>
-                    <TouchableOpacity style={styles.editButton}>
-                        <Ionicons name="refresh" size={20} color="white" />
-                    </TouchableOpacity>
+                    {/*<TouchableOpacity*/}
+                    {/*    style={styles.editButton}*/}
+                    {/*    onPress={() => navigateTo('PersonalInfo')}*/}
+                    {/*>*/}
+                    {/*    <Ionicons name="refresh" size={20} color="white" />*/}
+                    {/*</TouchableOpacity>*/}
                 </View>
 
                 {/* Menu Items */}
@@ -263,6 +306,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#121212',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     header: {
         flexDirection: 'row',
