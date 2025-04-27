@@ -1,109 +1,120 @@
-// screens/PersonalInfoScreen.js
 import React, { useState, useEffect } from 'react';
 import {
-    StyleSheet,
     View,
     Text,
-    Image,
-    TouchableOpacity,
-    SafeAreaView,
-    StatusBar,
-    ScrollView,
     TextInput,
+    TouchableOpacity,
+    StyleSheet,
+    SafeAreaView,
+    Image,
+    Alert,
     ActivityIndicator,
-    KeyboardAvoidingView,
     Platform,
-    Keyboard
+    ScrollView,
+    KeyboardAvoidingView,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
+import * as ImagePicker from 'expo-image-picker';
+import { Ionicons } from '@expo/vector-icons';
+import { getProfilePhotoPath } from '../utils/profileUtils';
+import { IMG_BASE_URL } from '../utils/constants';
 
-const PersonalInfoScreen = ({ navigation }) => {
-    const [isLoading, setIsLoading] = useState(true);
-    const [isSaving, setIsSaving] = useState(false);
+const PersonalInfoScreen = () => {
+    const navigation = useNavigation();
+    const [loading, setLoading] = useState(true);
+    const [updating, setUpdating] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
-    const [error, setError] = useState('');
     const [profileData, setProfileData] = useState({
         first_name: '',
         last_name: '',
         email: '',
         about: '',
         photo: '',
-        plan_id: 1,
-        plan: 'Free'
+        default_language_id: 1,
     });
     const [languages, setLanguages] = useState([]);
-    const [selectedLanguage, setSelectedLanguage] = useState(1);
-    const [selectedLanguageName, setSelectedLanguageName] = useState('English');
+    const [selectedImage, setSelectedImage] = useState(null);
+    const [imageSource, setImageSource] = useState({ uri: `${IMG_BASE_URL}/default-avatar.png` });
 
     useEffect(() => {
-        loadProfileData();
+        fetchProfileData();
     }, []);
 
-    const loadProfileData = async () => {
-        setIsLoading(true);
-        setError('');
+    useEffect(() => {
 
-        try {
-            // Get stored credentials
-            const profileId = await SecureStore.getItemAsync('profile_id');
-            const loginCode = await SecureStore.getItemAsync('login_code');
-
-            if (!profileId || !loginCode) {
-                throw new Error('Login credentials not found');
+        const updateImageSource = async () => {
+            if (selectedImage) {
+                setImageSource({ uri: selectedImage.uri });
+            } else if (profileData.photo) {
+                const profileId = await SecureStore.getItemAsync('profile_id');
+                setImageSource({ uri: getProfilePhotoPath(profileId, profileData.photo) });
+            } else {
+                setImageSource({ uri: `${IMG_BASE_URL}/default-avatar.png` });
             }
+        };
 
-            // Create FormData object
-            const formData = new FormData();
-            formData.append('profile_id', profileId);
-            formData.append('login_code', loginCode);
+        updateImageSource();
+    }, [selectedImage, profileData.photo]);
 
-            // Make API call using form-data
+    const fetchProfileData = async () => {
+        try {
+            const loginCode = await SecureStore.getItemAsync('login_code');
+            const profileId = await SecureStore.getItemAsync('profile_id');
+
             const response = await fetch('https://app.3dnaturesounds.com/api/get_profile_for_edit/', {
                 method: 'POST',
                 headers: {
-                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
                 },
-                body: formData
+                body: `login_code=${loginCode}&profile_id=${profileId}`,
             });
 
             const data = await response.json();
 
             if (data.success === 1) {
-                setProfileData(data.profile);
-                setLanguages(data.languages);
-                // Set default selected language (assuming the first one is the default)
-                if (data.languages && data.languages.length > 0) {
-                    setSelectedLanguage(data.languages[0].id);
-                    setSelectedLanguageName(data.languages[0].language);
-                }
+                setProfileData({
+                    ...data.profile,
+                    default_language_id: data.profile.language_id || 1,
+                });
+                setLanguages(data.languages || []);
             } else {
-                throw new Error(data.message || 'Failed to load profile data');
+                Alert.alert('Error', 'Failed to load profile data');
             }
-        } catch (err) {
-            console.error('Error fetching profile data:', err);
-            setError('Failed to load profile data. Please try again.');
+        } catch (error) {
+            console.error('Error fetching profile:', error);
+            Alert.alert('Error', 'Failed to load profile data');
         } finally {
-            setIsLoading(false);
+            setLoading(false);
         }
     };
 
-    const updateProfile = async () => {
-        Keyboard.dismiss();
-        setIsSaving(true);
-        setError('');
-        setShowSuccess(false);
+    const pickImage = async () => {
+        const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
+        if (permissionResult.granted === false) {
+            Alert.alert('Permission Required', 'Please grant access to your photo library');
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.8,
+        });
+
+        if (!result.canceled) {
+            setSelectedImage(result.assets[0]);
+        }
+    };
+
+    const handleUpdateProfile = async () => {
         try {
-            // Get stored credentials
-            const profileId = await SecureStore.getItemAsync('profile_id');
+            setUpdating(true);
             const loginCode = await SecureStore.getItemAsync('login_code');
+            const profileId = await SecureStore.getItemAsync('profile_id');
 
-            if (!profileId || !loginCode) {
-                throw new Error('Login credentials not found');
-            }
-
-            // Create FormData object
             const formData = new FormData();
             formData.append('profile_id', profileId);
             formData.append('login_code', loginCode);
@@ -111,58 +122,65 @@ const PersonalInfoScreen = ({ navigation }) => {
             formData.append('last_name', profileData.last_name);
             formData.append('email', profileData.email);
             formData.append('about', profileData.about);
-            formData.append('default_language_id', selectedLanguage);
+            formData.append('default_language_id', profileData.default_language_id);
 
-            // Make API call using form-data
+            if (selectedImage) {
+                const uri = selectedImage.uri;
+                const filename = uri.split('/').pop();
+                const match = /\.(\w+)$/.exec(filename);
+                const type = match ? `image/${match[1]}` : 'image/jpeg';
+
+                formData.append('photo', {
+                    uri: Platform.OS === 'ios' ? uri.replace('file://', '') : uri,
+                    name: filename,
+                    type,
+                });
+            }
+
             const response = await fetch('https://app.3dnaturesounds.com/api/update_profile/', {
                 method: 'POST',
+                body: formData,
                 headers: {
-                    'Accept': 'application/json',
+                    'Content-Type': 'multipart/form-data',
                 },
-                body: formData
             });
 
             const data = await response.json();
 
             if (data.success === 1) {
                 setShowSuccess(true);
-                // Hide success message after 3 seconds
                 setTimeout(() => {
                     setShowSuccess(false);
                 }, 3000);
             } else {
-                throw new Error(data.message || 'Failed to update profile');
+                Alert.alert('Error', data.error || 'Failed to update profile');
             }
-        } catch (err) {
-            console.error('Error updating profile:', err);
-            setError('Failed to update profile. Please try again.');
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            Alert.alert('Error', 'Failed to update profile');
         } finally {
-            setIsSaving(false);
+            setUpdating(false);
         }
     };
 
-    const getProfileImageUrl = () => {
-        if (profileData.photo && profileData.photo !== '') {
-            return `https://app.3dnaturesounds.com/assets/images/${profileData.photo}`;
-        }
-        return require('../assets/profile-placeholder.jpg');
-    };
 
-    const handleInputChange = (field, value) => {
-        setProfileData(prevData => ({
-            ...prevData,
-            [field]: value
-        }));
-    };
+
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#4A4AF4" />
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
-            <StatusBar barStyle="light-content" />
-
             <View style={styles.header}>
                 <TouchableOpacity
                     style={styles.backButton}
-                    onPress={() => navigation.goBack()}
+                    onPress={() => navigation.navigate('Account')}
                 >
                     <Ionicons name="arrow-back" size={24} color="white" />
                 </TouchableOpacity>
@@ -174,123 +192,93 @@ const PersonalInfoScreen = ({ navigation }) => {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardAvoidingView}
             >
-                {isLoading ? (
-                    <View style={styles.loaderContainer}>
-                        <ActivityIndicator size="large" color="#5D5FEF" />
-                    </View>
-                ) : error ? (
-                    <View style={styles.errorContainer}>
-                        <Text style={styles.errorText}>{error}</Text>
-                        <TouchableOpacity
-                            style={styles.retryButton}
-                            onPress={loadProfileData}
-                        >
-                            <Text style={styles.retryButtonText}>Retry</Text>
+                <ScrollView style={styles.content}>
+                    <View style={styles.profilePhotoSection}>
+                        <TouchableOpacity onPress={pickImage}>
+                            <View style={styles.profileImageContainer}>
+                                <Image source={imageSource} style={styles.profileImage} />
+                                <View style={styles.editPhotoButton}>
+                                    <Ionicons name="camera" size={20} color="#4A4AF4" />
+                                </View>
+                            </View>
                         </TouchableOpacity>
                     </View>
-                ) : (
-                    <>
-                        <ScrollView
-                            style={styles.content}
-                            contentContainerStyle={styles.contentContainer}
-                        >
-                            {/* Profile Photo Section */}
-                            <View style={styles.profilePhotoSection}>
-                                <View style={styles.profileImageContainer}>
-                                    <Image
-                                        source={getProfileImageUrl()}
-                                        style={styles.profileImage}
-                                    />
-                                    <View style={styles.editPhotoButton}>
-                                        <Ionicons name="checkmark-circle" size={20} color="#5D5FEF" />
-                                    </View>
-                                </View>
-                            </View>
 
-                            {/* Success Message */}
-                            {showSuccess && (
-                                <View style={styles.successMessage}>
-                                    <Ionicons name="checkmark-circle" size={20} color="white" />
-                                    <Text style={styles.successText}>Profile updated successfully</Text>
-                                </View>
-                            )}
-
-                            {/* Form Fields */}
-                            <View style={styles.formSection}>
-                                <Text style={styles.fieldLabel}>First Name</Text>
-                                <View style={styles.inputContainer}>
-                                    <TextInput
-                                        style={styles.input}
-                                        value={profileData.first_name}
-                                        onChangeText={(text) => handleInputChange('first_name', text)}
-                                        placeholder="Enter first name"
-                                        placeholderTextColor="#666"
-                                    />
-                                </View>
-
-                                <Text style={styles.fieldLabel}>Last Name</Text>
-                                <View style={styles.inputContainer}>
-                                    <TextInput
-                                        style={styles.input}
-                                        value={profileData.last_name}
-                                        onChangeText={(text) => handleInputChange('last_name', text)}
-                                        placeholder="Enter last name"
-                                        placeholderTextColor="#666"
-                                    />
-                                </View>
-
-                                <Text style={styles.fieldLabel}>Email</Text>
-                                <View style={styles.inputContainer}>
-                                    <View style={styles.emailContainer}>
-                                        <Ionicons name="mail" size={20} color="#A0A0A0" style={styles.emailIcon} />
-                                        <TextInput
-                                            style={styles.emailInput}
-                                            value={profileData.email}
-                                            onChangeText={(text) => handleInputChange('email', text)}
-                                            placeholder="Enter email address"
-                                            placeholderTextColor="#666"
-                                            keyboardType="email-address"
-                                            autoCapitalize="none"
-                                        />
-                                    </View>
-                                </View>
-
-                                <Text style={styles.fieldLabel}>About Me</Text>
-                                <View style={styles.inputContainer}>
-                                    <TextInput
-                                        style={[styles.input, styles.textArea]}
-                                        value={profileData.about}
-                                        onChangeText={(text) => handleInputChange('about', text)}
-                                        placeholder="Tell us about yourself"
-                                        placeholderTextColor="#666"
-                                        multiline
-                                        numberOfLines={4}
-                                        textAlignVertical="top"
-                                    />
-                                </View>
-
-                                <Text style={styles.fieldLabel}>Language</Text>
-                                <View style={styles.languageContainer}>
-                                    <Text style={styles.languageText}>{selectedLanguageName}</Text>
-                                    <Ionicons name="chevron-down" size={20} color="#A0A0A0" />
-                                </View>
-                            </View>
-                        </ScrollView>
-                        <View style={styles.footer}>
-                            <TouchableOpacity
-                                style={styles.updateButton}
-                                onPress={updateProfile}
-                                disabled={isSaving}
-                            >
-                                {isSaving ? (
-                                    <ActivityIndicator size="small" color="white" />
-                                ) : (
-                                    <Text style={styles.updateButtonText}>Update Profile</Text>
-                                )}
-                            </TouchableOpacity>
+                    {showSuccess && (
+                        <View style={styles.successMessage}>
+                            <Ionicons name="checkmark-circle" size={20} color="white" />
+                            <Text style={styles.successText}>Profile updated successfully</Text>
                         </View>
-                    </>
-                )}
+                    )}
+
+                    <View style={styles.formSection}>
+                        <Text style={styles.fieldLabel}>First Name</Text>
+                        <View style={styles.inputContainer}>
+                            <TextInput
+                                style={styles.input}
+                                value={profileData.first_name}
+                                onChangeText={(text) => setProfileData({ ...profileData, first_name: text })}
+                                placeholder="Enter first name"
+                                placeholderTextColor="#666"
+                            />
+                        </View>
+
+                        <Text style={styles.fieldLabel}>Last Name</Text>
+                        <View style={styles.inputContainer}>
+                            <TextInput
+                                style={styles.input}
+                                value={profileData.last_name}
+                                onChangeText={(text) => setProfileData({ ...profileData, last_name: text })}
+                                placeholder="Enter last name"
+                                placeholderTextColor="#666"
+                            />
+                        </View>
+
+                        <Text style={styles.fieldLabel}>Email</Text>
+                        <View style={styles.inputContainer}>
+                            <View style={styles.emailContainer}>
+                                <Ionicons name="mail" size={20} color="#A0A0A0" style={styles.emailIcon} />
+                                <TextInput
+                                    style={styles.emailInput}
+                                    value={profileData.email}
+                                    onChangeText={(text) => setProfileData({ ...profileData, email: text })}
+                                    placeholder="Enter email address"
+                                    placeholderTextColor="#666"
+                                    keyboardType="email-address"
+                                    autoCapitalize="none"
+                                />
+                            </View>
+                        </View>
+
+                        <Text style={styles.fieldLabel}>About Me</Text>
+                        <View style={styles.inputContainer}>
+                            <TextInput
+                                style={[styles.input, styles.textArea]}
+                                value={profileData.about}
+                                onChangeText={(text) => setProfileData({ ...profileData, about: text })}
+                                placeholder="Tell us about yourself"
+                                placeholderTextColor="#666"
+                                multiline
+                                numberOfLines={4}
+                                textAlignVertical="top"
+                            />
+                        </View>
+                    </View>
+                </ScrollView>
+
+                <View style={styles.footer}>
+                    <TouchableOpacity
+                        style={styles.updateButton}
+                        onPress={handleUpdateProfile}
+                        disabled={updating}
+                    >
+                        {updating ? (
+                            <ActivityIndicator size="small" color="white" />
+                        ) : (
+                            <Text style={styles.updateButtonText}>Update Profile</Text>
+                        )}
+                    </TouchableOpacity>
+                </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
     );
@@ -324,39 +312,14 @@ const styles = StyleSheet.create({
     placeholder: {
         width: 40,
     },
-    loaderContainer: {
+    loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    errorContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 24,
-    },
-    errorText: {
-        color: '#FF6B6B',
-        fontSize: 16,
-        textAlign: 'center',
-        marginBottom: 16,
-    },
-    retryButton: {
-        backgroundColor: '#5D5FEF',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
-        borderRadius: 50,
-    },
-    retryButtonText: {
-        color: 'white',
-        fontWeight: '600',
     },
     content: {
         flex: 1,
-    },
-    contentContainer: {
         paddingHorizontal: 20,
-        paddingBottom: 20,
     },
     profilePhotoSection: {
         alignItems: 'center',
@@ -370,6 +333,7 @@ const styles = StyleSheet.create({
         width: 100,
         height: 100,
         borderRadius: 50,
+        backgroundColor: '#1E1E1E',
     },
     editPhotoButton: {
         position: 'absolute',
@@ -377,6 +341,9 @@ const styles = StyleSheet.create({
         right: 0,
         backgroundColor: '#121212',
         borderRadius: 12,
+        padding: 8,
+        borderWidth: 1,
+        borderColor: '#4A4AF4',
     },
     successMessage: {
         flexDirection: 'row',
@@ -427,18 +394,6 @@ const styles = StyleSheet.create({
     },
     textArea: {
         minHeight: 100,
-    },
-    languageContainer: {
-        backgroundColor: '#1E1E1E',
-        borderRadius: 12,
-        padding: 16,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-    },
-    languageText: {
-        color: 'white',
-        fontSize: 16,
     },
     footer: {
         padding: 20,
